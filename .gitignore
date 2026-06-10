@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+.venv/
+active/
+poetry.lock
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+package-lock.json
+yarn-error.log*
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Project Specific
+.meta-harness/local/
+.meta-harness/*.zip
+.meta-harness/expert-packets/*.zip
+
+# REQUIRED BY META-HARNESS SECURITY CHECK
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+secrets.*
+*.secret
+*.token
+.npmrc
+.meta-harness/local/locks/
+.meta-harness/*.lock
+.meta-harness/**/*.lock
