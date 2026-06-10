@@ -38,7 +38,6 @@ def solve_shortage_lp(
     Returns:
         LPSolverResult object.
     """
-    # Validate input schemas (does not require hidden bottleneck labels)
     validate_nodes(nodes)
     validate_edges(edges, nodes)
     validate_demands(demands, nodes)
@@ -51,20 +50,22 @@ def solve_shortage_lp(
     S = len(t1_nodes)
 
     node_id_to_idx = {row["node_id"]: idx for idx, row in nodes.iterrows()}
-    edge_to_idx = {(row["source"], row["target"]): idx for idx, row in edges.iterrows()}
     sku_to_idx = {node_id: idx for idx, node_id in enumerate(t1_nodes)}
 
-    # Map variables to flat indices
-    # Variables per week G = N + E + 2S
-    # Var layout: production (N), flow (E), served (S), shortage (S)
-    c, A_ub, b_ub, A_eq, b_eq = _build_lp_matrices(
-        nodes, edges, demands, N, E, S, W, node_id_to_idx, edge_to_idx, sku_to_idx, t1_nodes
-    )
+    (
+        c,
+        A_ub,
+        b_ub,
+        A_eq,
+        b_eq,
+        capacity_constraint_rows,
+        inequality_rows_per_week,
+        row_counts,
+    ) = _build_lp_matrices(nodes, edges, demands, N, E, S, W, node_id_to_idx, sku_to_idx, t1_nodes)
 
     V = W * (N + E + 2 * S)
     bounds = [(0.0, None) for _ in range(V)]
 
-    # Solve using HiGHS
     res = opt.linprog(
         c=c,
         A_ub=A_ub,
@@ -75,21 +76,22 @@ def solve_shortage_lp(
         method="highs",
     )
 
-    # Fail loudly if solver fails
     if not res.success or res.status != 0:
         raise RuntimeError(
             f"LP Solver failed with status {res.status}: {res.message}. "
             "Please verify that the input constraints are feasible and bounded."
         )
 
-    # Extract served demand, shortages and shadow prices
     served_data, shortage_data = _extract_flows(res.x, W, N, E, S, t1_nodes)
-    shadow_prices_data = _extract_shadow_prices(res, W, N, nodes)
+    shadow_prices_data = _extract_shadow_prices(res, capacity_constraint_rows)
 
     metadata = {
         "nit": res.nit,
         "c": c.tolist(),
         "x": res.x.tolist(),
+        "capacity_constraint_rows": capacity_constraint_rows,
+        "inequality_rows_per_week": inequality_rows_per_week,
+        "row_counts": row_counts,
     }
 
     return LPSolverResult(
@@ -118,6 +120,176 @@ def _var_index(var_type: str, index: int, week: int, N: int, E: int, S: int) -> 
     raise ValueError(f"Invalid var_type: {var_type}")
 
 
+def _add_capacity_constraints(
+    nodes: pd.DataFrame,
+    N: int,
+    E: int,
+    S: int,
+    W: int,
+    ub_rows: List[int],
+    ub_cols: List[int],
+    ub_data: List[float],
+    ub_rhs: List[float],
+    capacity_constraint_rows: List[dict],
+    inequality_rows_per_week: Dict[int, int],
+    start_row: int,
+) -> int:
+    """Add capacity constraints to A_ub and b_ub."""
+    row_idx = start_row
+    for w in range(W):
+        for n in range(N):
+            cap = nodes.iloc[n]["capacity"]
+            ub_rows.append(row_idx)
+            ub_cols.append(_var_index("production", n, w, N, E, S))
+            ub_data.append(1.0)
+            ub_rhs.append(cap)
+
+            capacity_constraint_rows.append(
+                {
+                    "node_id": nodes.iloc[n]["node_id"],
+                    "week": w + 1,
+                    "row_idx": row_idx,
+                    "constraint_type": "capacity",
+                }
+            )
+            inequality_rows_per_week[w + 1] = inequality_rows_per_week.get(w + 1, 0) + 1
+            row_idx += 1
+    return row_idx
+
+
+def _add_flow_conservation_constraints(
+    nodes: pd.DataFrame,
+    N: int,
+    E: int,
+    S: int,
+    W: int,
+    outgoing_edges: Dict[str, List[int]],
+    ub_rows: List[int],
+    ub_cols: List[int],
+    ub_data: List[float],
+    ub_rhs: List[float],
+    inequality_rows_per_week: Dict[int, int],
+    start_row: int,
+) -> int:
+    """Add flow conservation constraints to A_ub and b_ub."""
+    row_idx = start_row
+    for w in range(W):
+        for n in range(N):
+            node_id = nodes.iloc[n]["node_id"]
+            ub_rows.append(row_idx)
+            ub_cols.append(_var_index("production", n, w, N, E, S))
+            ub_data.append(-1.0)
+            for edge_idx in outgoing_edges[node_id]:
+                ub_rows.append(row_idx)
+                ub_cols.append(_var_index("flow", edge_idx, w, N, E, S))
+                ub_data.append(1.0)
+            ub_rhs.append(0.0)
+            inequality_rows_per_week[w + 1] = inequality_rows_per_week.get(w + 1, 0) + 1
+            row_idx += 1
+    return row_idx
+
+
+def _add_bom_constraints(
+    edges: pd.DataFrame,
+    N: int,
+    E: int,
+    S: int,
+    W: int,
+    node_id_to_idx: Dict[str, int],
+    ub_rows: List[int],
+    ub_cols: List[int],
+    ub_data: List[float],
+    ub_rhs: List[float],
+    inequality_rows_per_week: Dict[int, int],
+    start_row: int,
+) -> int:
+    """Add BOM transit delay constraints to A_ub and b_ub."""
+    row_idx = start_row
+    for w in range(W):
+        for e_idx in range(E):
+            edge_row = edges.iloc[e_idx]
+            bom_ratio = edge_row["bom_ratio"]
+            delay = int(edge_row["transit_delay_weeks"])
+            target_idx = node_id_to_idx[edge_row["target"]]
+
+            ub_rows.append(row_idx)
+            ub_cols.append(_var_index("production", target_idx, w, N, E, S))
+            ub_data.append(bom_ratio)
+
+            if w - delay >= 0:
+                ub_rows.append(row_idx)
+                ub_cols.append(_var_index("flow", e_idx, w - delay, N, E, S))
+                ub_data.append(-1.0)
+                ub_rhs.append(0.0)
+            else:
+                ub_rhs.append(0.0)
+            inequality_rows_per_week[w + 1] = inequality_rows_per_week.get(w + 1, 0) + 1
+            row_idx += 1
+    return row_idx
+
+
+def _add_served_limits(
+    t1_nodes: List[str],
+    N: int,
+    E: int,
+    S: int,
+    W: int,
+    node_id_to_idx: Dict[str, int],
+    ub_rows: List[int],
+    ub_cols: List[int],
+    ub_data: List[float],
+    ub_rhs: List[float],
+    inequality_rows_per_week: Dict[int, int],
+    start_row: int,
+) -> int:
+    """Add served limits constraints to A_ub and b_ub."""
+    row_idx = start_row
+    for w in range(W):
+        for s in range(S):
+            sku_id = t1_nodes[s]
+            node_idx = node_id_to_idx[sku_id]
+            ub_rows.append(row_idx)
+            ub_cols.append(_var_index("served", s, w, N, E, S))
+            ub_data.append(1.0)
+            ub_rows.append(row_idx)
+            ub_cols.append(_var_index("production", node_idx, w, N, E, S))
+            ub_data.append(-1.0)
+            ub_rhs.append(0.0)
+            inequality_rows_per_week[w + 1] = inequality_rows_per_week.get(w + 1, 0) + 1
+            row_idx += 1
+    return row_idx
+
+
+def _add_demand_equality_constraints(
+    demands: pd.DataFrame,
+    t1_nodes: List[str],
+    N: int,
+    E: int,
+    S: int,
+    W: int,
+    eq_rows: List[int],
+    eq_cols: List[int],
+    eq_data: List[float],
+    eq_rhs: List[float],
+) -> int:
+    """Add demand satisfaction equality constraints to A_eq and b_eq."""
+    row_idx = 0
+    demand_dict = {(r["sku_id"], r["week"]): r["quantity"] for _, r in demands.iterrows()}
+    for w in range(W):
+        for s in range(S):
+            sku_id = t1_nodes[s]
+            qty = demand_dict.get((sku_id, w + 1), 0.0)
+            eq_rows.append(row_idx)
+            eq_cols.append(_var_index("served", s, w, N, E, S))
+            eq_data.append(1.0)
+            eq_rows.append(row_idx)
+            eq_cols.append(_var_index("shortage", s, w, N, E, S))
+            eq_data.append(1.0)
+            eq_rhs.append(qty)
+            row_idx += 1
+    return row_idx
+
+
 def _build_lp_matrices(
     nodes: pd.DataFrame,
     edges: pd.DataFrame,
@@ -127,15 +299,22 @@ def _build_lp_matrices(
     S: int,
     W: int,
     node_id_to_idx: Dict[str, int],
-    edge_to_idx: Dict[Tuple[str, str], int],
     sku_to_idx: Dict[str, int],
     t1_nodes: List[str],
-) -> Tuple[np.ndarray, sp.coo_matrix, np.ndarray, sp.coo_matrix, np.ndarray]:
+) -> Tuple[
+    np.ndarray,
+    sp.coo_matrix,
+    np.ndarray,
+    sp.coo_matrix,
+    np.ndarray,
+    List[dict],
+    Dict[int, int],
+    Dict[str, int],
+]:
     """Build the constraint matrices and objective vectors for linprog."""
     G = N + E + 2 * S
     V = W * G
 
-    # 1. Objective function: minimize shortage + 1e-5 * (production + flow)
     c = np.zeros(V)
     for w in range(W):
         for s in range(S):
@@ -145,95 +324,101 @@ def _build_lp_matrices(
         for e in range(E):
             c[_var_index("flow", e, w, N, E, S)] = 1e-5
 
-    # Prepare constraint builders
     ub_rows, ub_cols, ub_data, ub_rhs = [], [], [], []
     eq_rows, eq_cols, eq_data, eq_rhs = [], [], [], []
 
-    # Map demands for quick O(1) lookup
-    demand_dict = {(r["sku_id"], r["week"]): r["quantity"] for _, r in demands.iterrows()}
+    capacity_constraint_rows = []
+    inequality_rows_per_week = {w + 1: 0 for w in range(W)}
 
-    # Outgoing edges mapping by node_id
-    outgoing_edges: Dict[str, List[int]] = {row["node_id"]: [] for _, row in nodes.iterrows()}
+    outgoing_edges = {row["node_id"]: [] for _, row in nodes.iterrows()}
     for idx, row in edges.iterrows():
         outgoing_edges[row["source"]].append(idx)
 
-    ub_row_counter = 0
-    eq_row_counter = 0
+    next_row = _add_capacity_constraints(
+        nodes,
+        N,
+        E,
+        S,
+        W,
+        ub_rows,
+        ub_cols,
+        ub_data,
+        ub_rhs,
+        capacity_constraint_rows,
+        inequality_rows_per_week,
+        0,
+    )
 
-    for w in range(W):
-        # A. Capacity Constraints (production[v, w] <= capacity[v])
-        for n in range(N):
-            cap = nodes.iloc[n]["capacity"]
-            ub_rows.append(ub_row_counter)
-            ub_cols.append(_var_index("production", n, w, N, E, S))
-            ub_data.append(1.0)
-            ub_rhs.append(cap)
-            ub_row_counter += 1
+    next_row = _add_flow_conservation_constraints(
+        nodes,
+        N,
+        E,
+        S,
+        W,
+        outgoing_edges,
+        ub_rows,
+        ub_cols,
+        ub_data,
+        ub_rhs,
+        inequality_rows_per_week,
+        next_row,
+    )
 
-        # B. Flow Conservation (Outgoing flow <= production[v, w])
-        for n in range(N):
-            node_id = nodes.iloc[n]["node_id"]
-            ub_rows.append(ub_row_counter)
-            ub_cols.append(_var_index("production", n, w, N, E, S))
-            ub_data.append(-1.0)
-            for edge_idx in outgoing_edges[node_id]:
-                ub_rows.append(ub_row_counter)
-                ub_cols.append(_var_index("flow", edge_idx, w, N, E, S))
-                ub_data.append(1.0)
-            ub_rhs.append(0.0)
-            ub_row_counter += 1
+    next_row = _add_bom_constraints(
+        edges,
+        N,
+        E,
+        S,
+        W,
+        node_id_to_idx,
+        ub_rows,
+        ub_cols,
+        ub_data,
+        ub_rhs,
+        inequality_rows_per_week,
+        next_row,
+    )
 
-        # C. BOM / Input Constraints (bom_ratio * production[v, w] <= flow[e, w - delay])
-        for e_idx in range(E):
-            edge_row = edges.iloc[e_idx]
-            bom_ratio = edge_row["bom_ratio"]
-            delay = int(edge_row["transit_delay_weeks"])
-            target_idx = node_id_to_idx[edge_row["target"]]
+    next_row = _add_served_limits(
+        t1_nodes,
+        N,
+        E,
+        S,
+        W,
+        node_id_to_idx,
+        ub_rows,
+        ub_cols,
+        ub_data,
+        ub_rhs,
+        inequality_rows_per_week,
+        next_row,
+    )
 
-            ub_rows.append(ub_row_counter)
-            ub_cols.append(_var_index("production", target_idx, w, N, E, S))
-            ub_data.append(bom_ratio)
+    eq_row_count = _add_demand_equality_constraints(
+        demands, t1_nodes, N, E, S, W, eq_rows, eq_cols, eq_data, eq_rhs
+    )
 
-            if w - delay >= 0:
-                ub_rows.append(ub_row_counter)
-                ub_cols.append(_var_index("flow", e_idx, w - delay, N, E, S))
-                ub_data.append(-1.0)
-                ub_rhs.append(0.0)
-            else:
-                # If shipped before start week, production at target is blocked
-                ub_rhs.append(0.0)
-            ub_row_counter += 1
+    A_ub = sp.coo_matrix((ub_data, (ub_rows, ub_cols)), shape=(next_row, V))
+    A_eq = sp.coo_matrix((eq_data, (eq_rows, eq_cols)), shape=(eq_row_count, V))
 
-        # D. Served limits (served[s, w] <= production[sku_node_idx, w])
-        for s in range(S):
-            sku_id = t1_nodes[s]
-            node_idx = node_id_to_idx[sku_id]
-            ub_rows.append(ub_row_counter)
-            ub_cols.append(_var_index("served", s, w, N, E, S))
-            ub_data.append(1.0)
-            ub_rows.append(ub_row_counter)
-            ub_cols.append(_var_index("production", node_idx, w, N, E, S))
-            ub_data.append(-1.0)
-            ub_rhs.append(0.0)
-            ub_row_counter += 1
+    row_counts = {
+        "capacity": W * N,
+        "flow_conservation": W * N,
+        "bom_input": W * E,
+        "served_limit": W * S,
+        "demand_equality": W * S,
+    }
 
-        # E. Demand Constraint Equality (served[s, w] + shortage[s, w] = demand[s, w])
-        for s in range(S):
-            sku_id = t1_nodes[s]
-            qty = demand_dict.get((sku_id, w + 1), 0.0)
-            eq_rows.append(eq_row_counter)
-            eq_cols.append(_var_index("served", s, w, N, E, S))
-            eq_data.append(1.0)
-            eq_rows.append(eq_row_counter)
-            eq_cols.append(_var_index("shortage", s, w, N, E, S))
-            eq_data.append(1.0)
-            eq_rhs.append(qty)
-            eq_row_counter += 1
-
-    A_ub = sp.coo_matrix((ub_data, (ub_rows, ub_cols)), shape=(ub_row_counter, V))
-    A_eq = sp.coo_matrix((eq_data, (eq_rows, eq_cols)), shape=(eq_row_counter, V))
-
-    return c, A_ub, np.array(ub_rhs), A_eq, np.array(eq_rhs)
+    return (
+        c,
+        A_ub,
+        np.array(ub_rhs),
+        A_eq,
+        np.array(eq_rhs),
+        capacity_constraint_rows,
+        inequality_rows_per_week,
+        row_counts,
+    )
 
 
 def _extract_flows(
@@ -250,18 +435,24 @@ def _extract_flows(
             shortage_val = x[_var_index("shortage", s, w, N, E, S)]
 
             served_data.append(
-                {"sku_id": sku_id, "week": w + 1, "quantity": round(float(served_val), 4)}
+                {
+                    "sku_id": sku_id,
+                    "week": w + 1,
+                    "quantity": round(float(served_val), 4),
+                }
             )
             shortage_data.append(
-                {"sku_id": sku_id, "week": w + 1, "quantity": round(float(shortage_val), 4)}
+                {
+                    "sku_id": sku_id,
+                    "week": w + 1,
+                    "quantity": round(float(shortage_val), 4),
+                }
             )
 
     return served_data, shortage_data
 
 
-def _extract_shadow_prices(
-    res: opt.OptimizeResult, W: int, N: int, nodes: pd.DataFrame
-) -> List[dict]:
+def _extract_shadow_prices(res: opt.OptimizeResult, row_map: List[dict]) -> List[dict]:
     """Extract and convert capacity constraint marginals (shadow prices)."""
     shadow_prices_data = []
 
@@ -269,24 +460,23 @@ def _extract_shadow_prices(
     if res.ineqlin is not None and res.ineqlin.marginals is not None:
         marginals = res.ineqlin.marginals
 
-    for w in range(W):
-        for n in range(N):
-            node_id = nodes.iloc[n]["node_id"]
-            # Row index corresponding to the capacity constraint production[n, w] <= capacity[n]
-            # Since capacity constraints were added first in _build_lp_matrices
-            row_idx = w * N + n
-            raw_marg = float(marginals[row_idx]) if marginals is not None else 0.0
+    for entry in row_map:
+        row_idx = entry["row_idx"]
+        node_id = entry["node_id"]
+        week = entry["week"]
 
-            # Sign convention: capacity_shadow_value = -raw_marginal
-            shadow_val = -raw_marg
+        raw_marg = float(marginals[row_idx]) if marginals is not None else 0.0
 
-            shadow_prices_data.append(
-                {
-                    "node_id": node_id,
-                    "week": w + 1,
-                    "raw_marginal": round(raw_marg, 6),
-                    "capacity_shadow_value": round(shadow_val, 6),
-                }
-            )
+        # Sign convention: capacity_shadow_value = -raw_marginal
+        shadow_val = -raw_marg
+
+        shadow_prices_data.append(
+            {
+                "node_id": node_id,
+                "week": week,
+                "raw_marginal": round(raw_marg, 6),
+                "capacity_shadow_value": round(shadow_val, 6),
+            }
+        )
 
     return shadow_prices_data

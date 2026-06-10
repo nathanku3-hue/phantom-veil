@@ -4,6 +4,8 @@
   "modules": [
     { "path": "docs/", "owner": "nathanku3-hue", "risk": "docs" },
     { "path": "README.md", "owner": "nathanku3-hue", "risk": "docs" },
-    { "path": ".meta-harness/", "owner": "nathanku3-hue", "risk": "control-plane" }
+    { "path": ".meta-harness/", "owner": "nathanku3-hue", "risk": "control-plane" },
+    { "path": "src/", "owner": "nathanku3-hue", "risk": "core" },
+    { "path": "tests/", "owner": "nathanku3-hue", "risk": "test" }
   ]
 }

@@ -1,19 +1,23 @@
 {
   "schema_version": "1.0.0",
   "v": 1,
-  "generated_at": "2026-06-10T11:58:50.707Z",
-  "generated_by": "meta-harness quality baseline",
-  "source_commit": null,
+  "generated_at": "2026-06-10T15:14:07.045Z",
+  "generated_by": "meta-harness quality baseline refresh",
+  "source_commit": "f22e6dff6ca92285b9f2c150f2989ea0d4278eff",
   "baseline_policy_hash": "6e55cc50eae6185f715ac49b3d4247a8837cc28b0b6df79a01a7eb0a1da83a96",
-  "owners_hash": "1dea2a2cc84293ee65f8714bcee7b438ac58d0b8e8e0e6fe0470f457eff84a37",
-  "previous_baseline_hash": null,
-  "quality_summary_before": null,
-  "quality_summary_after": {
+  "owners_hash": "0a14908d45e50bec67951f55e1f5c8d4ac2242c4e7be663f8cf00e6042fed9cf",
+  "previous_baseline_hash": "360f09517ac7d479f2ae472ecaa7dadd100b84395d44a6381ae2bcc5eed8199b",
+  "quality_summary_before": {
     "source_files": 4279,
     "overbudget_files": 1033,
     "complexity_findings": 3221
   },
-  "manual_override_decision": null,
+  "quality_summary_after": {
+    "source_files": 4283,
+    "overbudget_files": 1033,
+    "complexity_findings": 3222
+  },
+  "manual_override_decision": "D002",
   "mode": "ratchet",
   "budgets": {
     "max_source_file_lines": 500,
@@ -17119,7 +17123,11 @@
       "overbudget": false
     },
     "src/phantom_veil/__init__.py": {
-      "lines": 13,
+      "lines": 24,
+      "overbudget": false
+    },
+    "src/phantom_veil/benchmark.py": {
+      "lines": 121,
       "overbudget": false
     },
     "src/phantom_veil/io.py": {
@@ -17130,12 +17138,24 @@
       "lines": 20,
       "overbudget": false
     },
+    "src/phantom_veil/solver.py": {
+      "lines": 482,
+      "overbudget": false
+    },
     "src/phantom_veil/worldgen.py": {
       "lines": 200,
       "overbudget": false
     },
+    "tests/test_benchmark.py": {
+      "lines": 52,
+      "overbudget": false
+    },
     "tests/test_schemas.py": {
       "lines": 169,
+      "overbudget": false
+    },
+    "tests/test_solver.py": {
+      "lines": 345,
       "overbudget": false
     },
     "tests/test_worldgen.py": {
@@ -42806,7 +42826,13 @@
         "budget_category": "source"
       },
       "src/phantom_veil/__init__.py": {
-        "lines": 13,
+        "lines": 24,
+        "overbudget": false,
+        "max_lines": 400,
+        "budget_category": "source"
+      },
+      "src/phantom_veil/benchmark.py": {
+        "lines": 121,
         "overbudget": false,
         "max_lines": 400,
         "budget_category": "source"
@@ -42823,15 +42849,33 @@
         "max_lines": 400,
         "budget_category": "source"
       },
+      "src/phantom_veil/solver.py": {
+        "lines": 482,
+        "overbudget": true,
+        "max_lines": 400,
+        "budget_category": "source"
+      },
       "src/phantom_veil/worldgen.py": {
         "lines": 200,
         "overbudget": false,
         "max_lines": 400,
         "budget_category": "source"
       },
+      "tests/test_benchmark.py": {
+        "lines": 52,
+        "overbudget": false,
+        "max_lines": 300,
+        "budget_category": "test"
+      },
       "tests/test_schemas.py": {
         "lines": 169,
         "overbudget": false,
+        "max_lines": 300,
+        "budget_category": "test"
+      },
+      "tests/test_solver.py": {
+        "lines": 345,
+        "overbudget": true,
         "max_lines": 300,
         "budget_category": "test"
       },
@@ -42904,5 +42948,5 @@
       }
     }
   },
-  "new_baseline_hash": "360f09517ac7d479f2ae472ecaa7dadd100b84395d44a6381ae2bcc5eed8199b"
+  "new_baseline_hash": "41553f9b724219c23e08794deb59de13a09256031b80ff322bcf1dc7374b49e9"
 }
