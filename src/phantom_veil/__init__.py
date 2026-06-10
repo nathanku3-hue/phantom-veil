@@ -6,6 +6,14 @@ from phantom_veil.benchmark import (
     score_predictions,
 )
 from phantom_veil.io import load_world, save_world, validate_demands, validate_edges, validate_nodes
+from phantom_veil.scenarios import (
+    ScenarioResult,
+    ScenarioSpec,
+    apply_scenario,
+    compare_scenarios,
+    evaluate_intervention_set,
+    run_scenario,
+)
 from phantom_veil.solver import LPSolverResult, solve_shortage_lp
 from phantom_veil.worldgen import generate_world
 
@@ -21,4 +29,10 @@ __all__ = [
     "score_predictions",
     "rank_bottlenecks_by_shadow_price",
     "run_benchmark_suite",
+    "ScenarioSpec",
+    "ScenarioResult",
+    "apply_scenario",
+    "run_scenario",
+    "compare_scenarios",
+    "evaluate_intervention_set",
 ]

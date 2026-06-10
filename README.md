@@ -137,6 +137,40 @@ print("Average Top-k Overlap Count:", results["top_k_overlap"])
 print("Average Shortage Reduction:", results["shortage_reduction"])
 ```
 
+## 🎭 MVP-004 Scenario Perturbation Engine
+
+The Scenario Perturbation Engine allows users to define repeatable scenario shocks and interventions to measure how demand surges, capacity shocks, transit delays, and candidate capacity additions affect shortages and bottleneck rankings.
+
+### Quickstart Scenario Example
+
+```python
+from phantom_veil.worldgen import generate_world
+from phantom_veil.scenarios import ScenarioSpec, run_scenario, compare_scenarios
+
+# 1. Generate a supply chain network
+nodes, edges, demands, _ = generate_world(seed=42, node_count=10, horizon_weeks=5)
+
+# 2. Define a scenario spec (e.g., a demand shock during weeks 2 and 3)
+spec_base = ScenarioSpec(scenario_id="base")
+spec_perturbed = ScenarioSpec(
+    scenario_id="perturbed_demand_shock",
+    demand_multiplier=2.5,
+    weeks=[2, 3]
+)
+
+# 3. Run scenarios
+res_base = run_scenario(nodes, edges, demands, spec_base)
+res_perturbed = run_scenario(nodes, edges, demands, spec_perturbed)
+
+# 4. Compare results
+diff = compare_scenarios(res_base, res_perturbed, top_k=3)
+print("Objective Delta:", diff["objective_delta"])
+print("Total Shortage Delta:", diff["total_shortage_delta"])
+print("Top-k rank changes:")
+for node_id, change in diff["top_k_bottleneck_rank_changes"].items():
+    print(f"  Node {node_id}: Base Rank {change['base_rank']} -> Scenario Rank {change['scenario_rank']}")
+```
+
 ---
 
 ## 🚀 Getting Started
