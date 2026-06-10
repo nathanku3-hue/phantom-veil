@@ -113,6 +113,32 @@ print(top_prices.to_string(index=False))
 
 ---
 
+## 📊 MVP-003 Bottleneck Benchmark Harness
+
+The benchmark harness allows you to evaluate the offline bottleneck classification accuracy over a set of synthetic supply chain seeds. It computes precision, recall, top-k overlap, and shortage reduction achieved by restoring predicted bottlenecks back to their nominal capacities.
+
+### Quickstart Benchmark Example
+
+```python
+from phantom_veil.benchmark import run_benchmark_suite
+
+# Run the benchmark suite over a list of random seeds
+results = run_benchmark_suite(
+    seeds=[11, 22, 33],
+    node_count=30,
+    horizon_weeks=26,
+    top_k=3,
+    use_true_capacities=True
+)
+
+print("Average Precision@k:", results["precision@k"])
+print("Average Recall@k:", results["recall@k"])
+print("Average Top-k Overlap Count:", results["top_k_overlap"])
+print("Average Shortage Reduction:", results["shortage_reduction"])
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

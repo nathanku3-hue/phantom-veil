@@ -44,9 +44,21 @@ def test_benchmark_suite_recall_threshold():
     assert "avg_precision" in res
     assert "avg_recall" in res
     assert "avg_f1" in res
+    assert "precision@k" in res
+    assert "recall@k" in res
+    assert "top_k_overlap" in res
+    assert "shortage_reduction" in res
     assert len(res["detailed_results"]) == len(seeds)
+
+    # Check detailed results schema
+    for item in res["detailed_results"]:
+        assert "top_k_overlap" in item
+        assert "overlap_count" in item
+        assert "shortage_reduction" in item
 
     # Assert recall threshold meets the expected active bottleneck identification target.
     # Since only 1 of the 2 bottlenecks is active (the other is starved), the maximum recall is 0.5.
     # Therefore, 0.45 average recall indicates correct identification of the active bottlenecks.
     assert res["avg_recall"] >= 0.45
+    assert res["recall@k"] >= 0.45
+    assert res["shortage_reduction"] >= 0.0
