@@ -6,6 +6,13 @@ from phantom_veil.benchmark import (
     score_predictions,
 )
 from phantom_veil.io import load_world, save_world, validate_demands, validate_edges, validate_nodes
+from phantom_veil.reporting import (
+    DecisionReport,
+    ReportConfig,
+    build_decision_report,
+    export_report_json,
+    export_report_markdown,
+)
 from phantom_veil.scenarios import (
     ScenarioResult,
     ScenarioSpec,
@@ -35,4 +42,9 @@ __all__ = [
     "run_scenario",
     "compare_scenarios",
     "evaluate_intervention_set",
+    "ReportConfig",
+    "DecisionReport",
+    "build_decision_report",
+    "export_report_markdown",
+    "export_report_json",
 ]

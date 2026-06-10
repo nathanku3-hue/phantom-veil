@@ -171,6 +171,53 @@ for node_id, change in diff["top_k_bottleneck_rank_changes"].items():
     print(f"  Node {node_id}: Base Rank {change['base_rank']} -> Scenario Rank {change['scenario_rank']}")
 ```
 
+## 📋 MVP-005 Decision Report Artifact
+
+The Decision Report module provides a deterministic report generator that aggregates LP Optimization results, Scenario runs, Interventions, and Offline Benchmarks into formatted Markdown or JSON artifacts. It enforces a strict information-barrier constraint, preventing ground-truth supplier bottleneck status from leaking into operator-facing sections of the report.
+
+### Quickstart Report Example
+
+```python
+from phantom_veil.worldgen import generate_world
+from phantom_veil.scenarios import ScenarioSpec, run_scenario, evaluate_intervention_set
+from phantom_veil.reporting import ReportConfig, build_decision_report, export_report_markdown
+
+# 1. Generate supply chain data
+nodes, edges, demands, _ = generate_world(seed=42, node_count=10, horizon_weeks=5)
+
+# 2. Run baseline and perturbed scenarios
+spec_base = ScenarioSpec(scenario_id="base")
+res_base = run_scenario(nodes, edges, demands, spec_base)
+
+spec_perturbed = ScenarioSpec(scenario_id="shock", demand_multiplier=2.0, weeks=[2, 3])
+res_perturbed = run_scenario(nodes, edges, demands, spec_perturbed)
+
+# 3. Evaluate intervention set effectiveness
+interv_metrics = evaluate_intervention_set(nodes, edges, demands, top_k=2, capacity_increment=100.0)
+
+# 4. Generate the Decision Report
+config = ReportConfig(
+    report_id="REP_Q3_VULN",
+    seed=42,
+    top_k=2,
+    scenario_ids=["shock"]
+)
+
+report = build_decision_report(
+    nodes=nodes,
+    edges=edges,
+    demands=demands,
+    config=config,
+    baseline_result=res_base,
+    perturbed_results={"shock": res_perturbed},
+    intervention_metrics=interv_metrics
+)
+
+# 5. Export and print the report
+markdown_output = export_report_markdown(report)
+print(markdown_output)
+```
+
 ---
 
 ## 🚀 Getting Started
