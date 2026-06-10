@@ -70,6 +70,49 @@ To avoid the **epistemic trap** of self-fulfilling validation (where the simulat
 
 ---
 
+## 🧮 MVP-002 LP Solver
+
+The LP Solver module implements the time-expanded supply-chain shortage minimization linear program. It maps production, flow, served, and shortage variables across weeks, solves using `scipy.optimize.linprog(method="highs")`, and extracts capacity constraint shadow prices.
+
+### Shadow-Price Sign Convention
+
+In mathematical optimization:
+- SciPy's HiGHS solver returns marginals representing the sensitivity of the objective function with respect to the right-hand-side constraint values ($\frac{\partial \text{Objective}}{\partial \text{RHS}}$).
+- For a shortage minimization LP, adding capacity reduces shortage (loss decreases), resulting in a negative raw marginal.
+- Business shadow values must be positive to reflect the benefit of additional capacity.
+- The business shadow value is defined as:
+  $$\text{capacity\_shadow\_value} = -\text{raw\_marginal}$$
+- A finite-difference sensitivity check verifies this sign convention.
+
+### Quickstart Example
+
+The following example demonstrates how to generate a synthetic supply chain world, run the LP solver, and print the top shadow prices:
+
+```python
+import pandas as pd
+from phantom_veil.worldgen import generate_world
+from phantom_veil.solver import solve_shortage_lp
+
+# 1. Generate a deterministic supply chain world
+nodes, edges, demands, _ = generate_world(seed=42, node_count=50, horizon_weeks=52)
+
+# 2. Solve the time-expanded LP model
+result = solve_shortage_lp(nodes, edges, demands)
+
+# 3. Print the top capacity shadow prices
+print("Success:", result.success)
+print("Objective Value (Total Shortage):", result.objective_value)
+
+# Find top capacity shadow prices
+top_prices = result.capacity_shadow_prices.sort_values(
+    by="capacity_shadow_value", ascending=False
+).head(10)
+print("\nTop 10 Capacity Shadow Prices:")
+print(top_prices.to_string(index=False))
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
