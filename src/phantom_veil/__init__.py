@@ -12,6 +12,13 @@ from phantom_veil.dynamics import (
     simulate_queue_dynamics,
     summarize_dynamic_risk,
 )
+from phantom_veil.inverse import (
+    InverseConfig,
+    InverseResult,
+    build_inverse_features,
+    evaluate_inverse_against_ground_truth,
+    rank_inverse_bottlenecks,
+)
 from phantom_veil.io import load_world, save_world, validate_demands, validate_edges, validate_nodes
 from phantom_veil.reporting import (
     DecisionReport,
@@ -59,4 +66,9 @@ __all__ = [
     "select_dynamic_nodes",
     "simulate_queue_dynamics",
     "summarize_dynamic_risk",
+    "InverseConfig",
+    "InverseResult",
+    "build_inverse_features",
+    "rank_inverse_bottlenecks",
+    "evaluate_inverse_against_ground_truth",
 ]

@@ -251,6 +251,69 @@ print("Warnings generated:", summary["warnings"])
 
 ---
 
+## 🔍 MVP-007 Inverse Bottleneck Signal Extractor
+
+The Inverse Bottleneck Signal Extractor provides a layer that uses public LP/scenario/dynamics outputs to infer likely hidden bottlenecks without consuming ground-truth labels during inference. It combines multiple public signals (LP shadow prices, scenario shortage deltas, intervention efficiencies, and optional dynamic risk metrics) into deterministic bottleneck rankings, enabling evaluation of these predictions against private ground-truth labels only in an evaluation-only context.
+
+### Quickstart Inverse Example
+
+```python
+from phantom_veil.worldgen import generate_world
+from phantom_veil.scenarios import ScenarioSpec, run_scenario, evaluate_intervention_set
+from phantom_veil.dynamics import QueueDynamicsConfig, simulate_queue_dynamics, summarize_dynamic_risk
+from phantom_veil.inverse import InverseConfig, build_inverse_features, rank_inverse_bottlenecks, evaluate_inverse_against_ground_truth
+
+# 1. Generate supply chain and solve baseline
+nodes, edges, demands, ground_truth = generate_world(seed=42, node_count=10, horizon_weeks=5)
+spec_base = ScenarioSpec(scenario_id="base")
+res_base = run_scenario(nodes, edges, demands, spec_base)
+
+# 2. Collect public scenario & intervention outputs per node
+scenario_shortage_deltas = {}
+intervention_efficiencies = {}
+
+for node_id in nodes["node_id"]:
+    # Run a node capacity-perturbation scenario
+    spec_node = ScenarioSpec(scenario_id=f"shock_{node_id}", capacity_multiplier_by_node={node_id: 0.5})
+    res_node = run_scenario(nodes, edges, demands, spec_node)
+    scenario_shortage_deltas[node_id] = res_node.total_shortage - res_base.total_shortage
+
+    # Evaluate intervention efficiency on the node
+    int_metric = evaluate_intervention_set(nodes, edges, demands, top_k=1, capacity_increment=50.0)
+    intervention_efficiencies[node_id] = int_metric["reduction_per_unit_capacity"]
+
+# 3. Simulate queue dynamics for dynamic risk signals
+dyn_config = QueueDynamicsConfig(horizon_days=15, top_k=2)
+dyn_res = simulate_queue_dynamics(nodes, edges, demands, res_base, dyn_config)
+dyn_summary = summarize_dynamic_risk(dyn_res)
+
+# 4. Build inverse features using ONLY public outputs (no hidden labels)
+features = build_inverse_features(
+    nodes=nodes,
+    capacity_shadow_prices=res_base.capacity_shadow_prices,
+    scenario_shortage_deltas=scenario_shortage_deltas,
+    intervention_efficiencies=intervention_efficiencies,
+    dynamic_utilizations=dyn_summary["max_utilization_by_node"],
+    dynamic_lead_time_multipliers=dyn_summary["max_lead_time_multiplier_by_node"]
+)
+
+# 5. Score and rank candidate bottlenecks
+inv_config = InverseConfig(top_k=2)
+inv_res = rank_inverse_bottlenecks(features, inv_config)
+print("Ranked Bottlenecks:", inv_res.ranked_nodes)
+print("Node Scores:", inv_res.node_scores)
+
+# 6. Evaluate predictions against private ground-truth hidden labels
+eval_res = evaluate_inverse_against_ground_truth(
+    inverse_result=inv_res,
+    ground_truth_bottlenecks=ground_truth,
+    top_k=2
+)
+print("Evaluation metrics:", eval_res)
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
