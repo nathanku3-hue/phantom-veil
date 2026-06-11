@@ -90,7 +90,27 @@ def simulate_queue_dynamics(
 
     Uses scipy.integrate.solve_ivp.
     """
+    valid_methods = {"RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA"}
+    if config.method not in valid_methods:
+        raise ValueError(
+            f"Unsupported solver method '{config.method}'. "
+            f"Supported methods are: {sorted(list(valid_methods))}"
+        )
+
     selected_nodes = select_dynamic_nodes(baseline_scenario_result, config.top_k)
+    if not selected_nodes:
+        t_eval = np.linspace(0.0, float(config.horizon_days), int(config.horizon_days) + 1)
+        return QueueDynamicsResult(
+            success=True,
+            method=config.method,
+            simulated_nodes=[],
+            time_grid=t_eval.tolist(),
+            queue_by_node={},
+            utilization_by_node={},
+            lead_time_multiplier_by_node={},
+            warnings=["Warning: No bottleneck nodes were selected for dynamics simulation."],
+        )
+
     W = int(demands["week"].max())
     demand_pressure = _propagate_demand_pressure(nodes, edges, demands)
 
@@ -126,6 +146,17 @@ def simulate_queue_dynamics(
     if not sol.success or sol.status < 0:
         raise RuntimeError(f"ODE Solver failed: {sol.message}")
 
+    return _build_dynamics_result(sol, nodes, selected_nodes, get_arrival_rate, config)
+
+
+def _build_dynamics_result(
+    sol,
+    nodes: pd.DataFrame,
+    selected_nodes: List[str],
+    get_arrival_rate,
+    config: QueueDynamicsConfig,
+) -> QueueDynamicsResult:
+    """Helper to parse ODE solution and build QueueDynamicsResult."""
     time_grid = sol.t.tolist()
     queue_by_node = {nid: [] for nid in selected_nodes}
     utilization_by_node = {nid: [] for nid in selected_nodes}

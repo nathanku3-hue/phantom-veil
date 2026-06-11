@@ -123,3 +123,31 @@ def test_solve_ivp_failure_handling(monkeypatch):
 
     with pytest.raises(RuntimeError, match="ODE Solver failed: Stiff step size underflow."):
         simulate_queue_dynamics(nodes, edges, demands, res_base, config)
+
+
+def test_dynamics_unsupported_method():
+    """Verify that unsupported solver methods raise ValueError."""
+    nodes, edges, demands, _, res_base = _setup_dynamics_data()
+    config = QueueDynamicsConfig(method="NONEXISTENT")
+    with pytest.raises(ValueError, match="Unsupported solver method"):
+        simulate_queue_dynamics(nodes, edges, demands, res_base, config)
+
+
+def test_dynamics_empty_selected_nodes_or_large_top_k():
+    """Verify dynamics when top_k is 0 or exceeds available nodes."""
+    nodes, edges, demands, _, res_base = _setup_dynamics_data()
+
+    # Case 1: top_k is 0 (no nodes selected)
+    config_zero = QueueDynamicsConfig(top_k=0)
+    res_zero = simulate_queue_dynamics(nodes, edges, demands, res_base, config_zero)
+    assert res_zero.success is True
+    assert len(res_zero.simulated_nodes) == 0
+    assert len(res_zero.warnings) > 0
+    assert "Warning: No bottleneck nodes were selected" in res_zero.warnings[0]
+
+    # Case 2: top_k is extremely large
+    config_large = QueueDynamicsConfig(top_k=1000)
+    res_large = simulate_queue_dynamics(nodes, edges, demands, res_base, config_large)
+    assert res_large.success is True
+    # Should slice gracefully to maximum available shadow price nodes
+    assert len(res_large.simulated_nodes) == len(res_base.top_shadow_price_nodes)
