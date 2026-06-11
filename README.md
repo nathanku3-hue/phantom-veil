@@ -357,6 +357,22 @@ print("Efficiency (shortage reduced per unit capacity):", benefits["reduction_pe
 
 ---
 
+## 🖥️ MVP-009 Streamlit Interactive UI Shell
+
+The Streamlit Interactive UI Shell provides a web-based operator dashboard for running Phantom Veil simulation pipelines. It exposes configuration inputs (random seed, node count, horizon weeks, demand multiplier, top_k selector) via an interactive sidebar. On run, it solves baseline/shocked models, integrates dynamics, coordinates capacity additions via ADMM, and compiles a comprehensive decision report.
+
+To install optional UI dependencies and run the dashboard locally:
+
+```powershell
+# Install streamlit optionally
+pip install -e ".[ui]"
+
+# Launch the Streamlit application
+streamlit run src/phantom_veil/ui_app.py
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

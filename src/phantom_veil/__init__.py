@@ -43,6 +43,7 @@ from phantom_veil.scenarios import (
     run_scenario,
 )
 from phantom_veil.solver import LPSolverResult, solve_shortage_lp
+from phantom_veil.ui_app import run_ui_pipeline
 from phantom_veil.worldgen import generate_world
 
 __all__ = [
@@ -83,4 +84,5 @@ __all__ = [
     "select_coordination_targets",
     "run_admm_coordination_smoke",
     "evaluate_coordination_benefits",
+    "run_ui_pipeline",
 ]
