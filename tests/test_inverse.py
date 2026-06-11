@@ -125,3 +125,56 @@ def test_inverse_extractor_evaluation():
     assert eval_res["precision@k"] == 0.5
     assert eval_res["recall@k"] == 0.5
     assert eval_res["overlap"] == ["N1"]
+
+
+def test_inverse_intervention_efficiency_rank_impact():
+    """Verify that intervention_efficiency changes rank order when weight is positive."""
+    features = {
+        "N1": {
+            "shadow_price": 5.0,
+            "shortage_delta": 0.0,
+            "intervention_efficiency": 0.0,
+            "dynamic_utilization": 0.0,
+            "dynamic_lead_time_multiplier": 1.0,
+        },
+        "N2": {
+            "shadow_price": 4.0,
+            "shortage_delta": 0.0,
+            "intervention_efficiency": 10.0,
+            "dynamic_utilization": 0.0,
+            "dynamic_lead_time_multiplier": 1.0,
+        },
+    }
+
+    # Case 1: weight is 0.0, N1 should rank first due to higher shadow price
+    config_no_eff = InverseConfig(
+        top_k=2,
+        shadow_price_weight=1.0,
+        shortage_weight=0.0,
+        dynamic_risk_weight=0.0,
+        intervention_efficiency_weight=0.0,
+    )
+    res_no_eff = rank_inverse_bottlenecks(features, config_no_eff)
+    assert res_no_eff.ranked_nodes == ["N1", "N2"]
+
+    # Case 2: weight is 1.0, N2 should rank first because its high efficiency outweighs
+    config_with_eff = InverseConfig(
+        top_k=2,
+        shadow_price_weight=1.0,
+        shortage_weight=0.0,
+        dynamic_risk_weight=0.0,
+        intervention_efficiency_weight=1.0,
+    )
+    res_with_eff = rank_inverse_bottlenecks(features, config_with_eff)
+    assert res_with_eff.ranked_nodes == ["N2", "N1"]
+
+
+def test_inverse_package_exports():
+    """Verify that inverse APIs are importable from phantom_veil package root."""
+    import phantom_veil
+
+    assert hasattr(phantom_veil, "InverseConfig")
+    assert hasattr(phantom_veil, "InverseResult")
+    assert hasattr(phantom_veil, "build_inverse_features")
+    assert hasattr(phantom_veil, "rank_inverse_bottlenecks")
+    assert hasattr(phantom_veil, "evaluate_inverse_against_ground_truth")

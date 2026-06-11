@@ -14,6 +14,7 @@ class InverseConfig:
     shadow_price_weight: float = 1.0
     shortage_weight: float = 1.0
     dynamic_risk_weight: float = 1.0
+    intervention_efficiency_weight: float = 1.0
     robust_scale: float = 1.0
 
 
@@ -94,6 +95,7 @@ def rank_inverse_bottlenecks(
             config.shadow_price_weight * shadow_p
             + config.shortage_weight * shortage_d
             + config.dynamic_risk_weight * dynamic_risk
+            + config.intervention_efficiency_weight * features.get("intervention_efficiency", 0.0)
         )
         score = raw_score * config.robust_scale
         node_scores[node_id] = round(float(score), 4)
