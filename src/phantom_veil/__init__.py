@@ -5,6 +5,13 @@ from phantom_veil.benchmark import (
     run_benchmark_suite,
     score_predictions,
 )
+from phantom_veil.coordination import (
+    CoordinationConfig,
+    CoordinationResult,
+    evaluate_coordination_benefits,
+    run_admm_coordination_smoke,
+    select_coordination_targets,
+)
 from phantom_veil.dynamics import (
     QueueDynamicsConfig,
     QueueDynamicsResult,
@@ -71,4 +78,9 @@ __all__ = [
     "build_inverse_features",
     "rank_inverse_bottlenecks",
     "evaluate_inverse_against_ground_truth",
+    "CoordinationConfig",
+    "CoordinationResult",
+    "select_coordination_targets",
+    "run_admm_coordination_smoke",
+    "evaluate_coordination_benefits",
 ]

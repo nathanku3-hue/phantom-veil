@@ -314,6 +314,49 @@ print("Evaluation metrics:", eval_res)
 
 ---
 
+## 🤝 MVP-008 Private Coordination ADMM Smoke Layer
+
+The Private Coordination ADMM module implements a privacy-preserving Alternating Direction Method of Multipliers (ADMM) coordination engine. It coordinates deep-tier capacity additions under global budget constraints without exposing private supplier costs, hidden bottleneck labels, or true capacity to the global coordinator. Suppliers solve local quadratic minimization steps independently, and the global coordinator resolves consensus additions using a budget projection algorithm.
+
+### Quickstart Coordination Example
+
+```python
+from phantom_veil.worldgen import generate_world
+from phantom_veil.coordination import (
+    CoordinationConfig,
+    select_coordination_targets,
+    run_admm_coordination_smoke,
+    evaluate_coordination_benefits
+)
+
+# 1. Generate observed network and mock public features
+nodes, edges, demands, _ = generate_world(seed=42, node_count=5, horizon_weeks=3)
+public_ranking = ["N1", "N2", "N3"]
+features = {
+    "N1": {"shadow_price": 5.0, "shortage_delta": 20.0},
+    "N2": {"shadow_price": 2.0, "shortage_delta": 5.0},
+    "N3": {"shadow_price": 0.0, "shortage_delta": 0.0},
+}
+
+# 2. Select targeting nodes for coordination
+targets = select_coordination_targets(public_ranking, top_k=2)
+
+# 3. Run privacy-preserving ADMM consensus loop
+config = CoordinationConfig(max_iterations=50, capacity_step_limit=50.0)
+result = run_admm_coordination_smoke(nodes, targets, features, config)
+
+print("Coordination success:", result.success)
+print("Recommended capacity additions:", result.recommended_capacity_add_by_node)
+print("Primal residuals trace:", result.consensus_residuals)
+
+# 4. Evaluate recommendations against baseline shortages
+benefits = evaluate_coordination_benefits(nodes, edges, demands, result)
+print("Shortage reduction:", benefits["shortage_reduction"])
+print("Efficiency (shortage reduced per unit capacity):", benefits["reduction_per_unit_capacity"])
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
