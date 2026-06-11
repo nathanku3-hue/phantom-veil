@@ -218,6 +218,37 @@ markdown_output = export_report_markdown(report)
 print(markdown_output)
 ```
 
+## 🌀 MVP-006 Stiff Queue Dynamics ODE Adapter
+
+The Queue Dynamics module integrates a continuous-time queueing model for the top bottleneck nodes identified by the LP solver. It uses SciPy's `solve_ivp` with implicit stiff solvers (such as BDF) to simulate queue lengths $Q(t)$, capacity utilization $\rho(t)$, and lead-time multipliers over time under unconstrained demand pressure.
+
+### Quickstart Dynamics Example
+
+```python
+from phantom_veil.worldgen import generate_world
+from phantom_veil.scenarios import ScenarioSpec, run_scenario
+from phantom_veil.dynamics import QueueDynamicsConfig, simulate_queue_dynamics, summarize_dynamic_risk
+
+# 1. Generate supply chain and solve baseline
+nodes, edges, demands, _ = generate_world(seed=42, node_count=10, horizon_weeks=5)
+spec_base = ScenarioSpec(scenario_id="base")
+res_base = run_scenario(nodes, edges, demands, spec_base)
+
+# 2. Configure and run continuous queue dynamics
+dyn_config = QueueDynamicsConfig(
+    method="BDF",
+    horizon_days=30,
+    top_k=2,
+    utilization_warning_threshold=0.90
+)
+dyn_result = simulate_queue_dynamics(nodes, edges, demands, res_base, dyn_config)
+
+# 3. Summarize risk
+summary = summarize_dynamic_risk(dyn_result)
+print("Max queue size per node:", summary["max_queue_by_node"])
+print("Warnings generated:", summary["warnings"])
+```
+
 ---
 
 ## 🚀 Getting Started

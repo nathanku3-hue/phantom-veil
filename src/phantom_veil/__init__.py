@@ -5,6 +5,13 @@ from phantom_veil.benchmark import (
     run_benchmark_suite,
     score_predictions,
 )
+from phantom_veil.dynamics import (
+    QueueDynamicsConfig,
+    QueueDynamicsResult,
+    select_dynamic_nodes,
+    simulate_queue_dynamics,
+    summarize_dynamic_risk,
+)
 from phantom_veil.io import load_world, save_world, validate_demands, validate_edges, validate_nodes
 from phantom_veil.reporting import (
     DecisionReport,
@@ -47,4 +54,9 @@ __all__ = [
     "build_decision_report",
     "export_report_markdown",
     "export_report_json",
+    "QueueDynamicsConfig",
+    "QueueDynamicsResult",
+    "select_dynamic_nodes",
+    "simulate_queue_dynamics",
+    "summarize_dynamic_risk",
 ]

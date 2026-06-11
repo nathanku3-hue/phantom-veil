@@ -110,6 +110,7 @@ def test_deterministic_report_generation():
     assert rep1.intervention_recommendations == rep2.intervention_recommendations
     assert rep1.benchmark_quality == rep2.benchmark_quality
     assert rep1.model_limitations == rep2.model_limitations
+    assert rep1.dynamic_risk == rep2.dynamic_risk
 
     # Verify markdown export is identical
     md1 = export_report_markdown(rep1)
@@ -155,6 +156,7 @@ def test_required_report_sections_exist():
     assert report.intervention_recommendations != ""
     assert report.benchmark_quality != ""
     assert report.model_limitations != ""
+    assert report.dynamic_risk != ""
 
 
 def test_markdown_and_json_exports():
@@ -261,3 +263,48 @@ def test_information_leakage_constraint():
             assert public_cap != true_cap
             # Assert the report capacity matches public nominal capacity
             assert record["capacity"] == public_cap
+
+
+def test_report_with_queue_dynamics():
+    """Verify building and exporting a report with real QueueDynamicsResult."""
+    from phantom_veil.dynamics import QueueDynamicsConfig, simulate_queue_dynamics
+
+    (
+        nodes,
+        edges,
+        demands,
+        _,
+        config,
+        res_base,
+        perturbed,
+        interv,
+        bench,
+    ) = _setup_report_data()
+
+    dyn_config = QueueDynamicsConfig(horizon_days=10, top_k=2)
+    dyn_res = simulate_queue_dynamics(nodes, edges, demands, res_base, dyn_config)
+
+    report = build_decision_report(
+        nodes,
+        edges,
+        demands,
+        config,
+        benchmark_results=bench,
+        baseline_result=res_base,
+        perturbed_results=perturbed,
+        intervention_metrics=interv,
+        dynamic_risk_result=dyn_res,
+    )
+
+    assert "Continuous queue-dynamics" in report.dynamic_risk
+    assert len(report.dynamic_risk.split("\n")) > 2
+
+    # Check markdown export has it
+    md = export_report_markdown(report)
+    assert "## Dynamic Risk Analysis" in md
+    assert "Continuous queue-dynamics" in md
+
+    # Check JSON export has it
+    js = export_report_json(report)
+    assert "dynamic_risk" in js
+    assert "Continuous queue-dynamics" in js["dynamic_risk"]

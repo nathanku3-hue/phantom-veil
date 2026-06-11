@@ -1,7 +1,7 @@
 """Decision Report Generator for Phantom Veil (MVP-005)."""
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -32,6 +32,7 @@ class DecisionReport:
     benchmark_quality: str
     model_limitations: str
     config: ReportConfig
+    dynamic_risk: str = ""
 
 
 def _build_exec_summary(
@@ -188,6 +189,33 @@ def _build_model_limitations() -> str:
     )
 
 
+def _build_dynamic_risk(
+    dynamic_risk_result: Optional[Any],
+) -> str:
+    if dynamic_risk_result is None:
+        return "Dynamic queue-dynamics risk analysis was not included."
+
+    from phantom_veil.dynamics import summarize_dynamic_risk
+
+    summary = summarize_dynamic_risk(dynamic_risk_result)
+    lines = ["Continuous queue-dynamics simulation risk summary:"]
+    for nid in dynamic_risk_result.simulated_nodes:
+        m_q = summary["max_queue_by_node"][nid]
+        m_u = summary["max_utilization_by_node"][nid]
+        m_lt = summary["max_lead_time_multiplier_by_node"][nid]
+        lines.append(
+            f"  - Node {nid}: Max Queue = {m_q:.2f}, Max Utilization = {m_u:.2f}, "
+            f"Max Lead-Time Multiplier = {m_lt:.2f}"
+        )
+    if dynamic_risk_result.warnings:
+        lines.append("Warnings generated:")
+        for w in dynamic_risk_result.warnings:
+            lines.append(f"  - {w}")
+    else:
+        lines.append("No utilization warning thresholds were exceeded.")
+    return "\n".join(lines)
+
+
 def build_decision_report(
     nodes: pd.DataFrame,
     edges: pd.DataFrame,
@@ -197,6 +225,7 @@ def build_decision_report(
     baseline_result: Optional[ScenarioResult] = None,
     perturbed_results: Optional[Dict[str, ScenarioResult]] = None,
     intervention_metrics: Optional[dict] = None,
+    dynamic_risk_result: Optional[Any] = None,
 ) -> DecisionReport:
     """Build a typed DecisionReport object containing all operator sections.
 
@@ -209,6 +238,7 @@ def build_decision_report(
         baseline_result: ScenarioResult of the baseline run.
         perturbed_results: Dict mapping scenario_id to ScenarioResult.
         intervention_metrics: Dict containing intervention effectiveness.
+        dynamic_risk_result: QueueDynamicsResult of simulated dynamics.
 
     Returns:
         DecisionReport object.
@@ -220,6 +250,7 @@ def build_decision_report(
     interv_rec = _build_intervention_recommendations(intervention_metrics, config)
     bench_quality = _build_benchmark_quality(benchmark_results, config)
     limitations = _build_model_limitations()
+    dyn_risk = _build_dynamic_risk(dynamic_risk_result)
 
     return DecisionReport(
         executive_summary=exec_summary,
@@ -230,6 +261,7 @@ def build_decision_report(
         benchmark_quality=bench_quality,
         model_limitations=limitations,
         config=config,
+        dynamic_risk=dyn_risk,
     )
 
 
@@ -280,6 +312,9 @@ def export_report_markdown(report: DecisionReport) -> str:
             "## Intervention Recommendations",
             report.intervention_recommendations,
             "",
+            "## Dynamic Risk Analysis",
+            report.dynamic_risk,
+            "",
             "## Benchmark Quality",
             report.benchmark_quality,
             "",
@@ -316,5 +351,6 @@ def export_report_json(report: DecisionReport) -> dict:
         "scenario_comparison": report.scenario_comparison,
         "intervention_recommendations": report.intervention_recommendations,
         "benchmark_quality": report.benchmark_quality,
+        "dynamic_risk": report.dynamic_risk,
         "model_limitations": report.model_limitations,
     }
