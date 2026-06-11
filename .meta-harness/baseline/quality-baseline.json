@@ -1,23 +1,23 @@
 {
   "schema_version": "1.0.0",
   "v": 1,
-  "generated_at": "2026-06-10T15:14:07.045Z",
+  "generated_at": "2026-06-11T05:58:26.962Z",
   "generated_by": "meta-harness quality baseline refresh",
-  "source_commit": "f22e6dff6ca92285b9f2c150f2989ea0d4278eff",
+  "source_commit": "49efbb74f9ea909833aee6fd7775605947ed9ded",
   "baseline_policy_hash": "6e55cc50eae6185f715ac49b3d4247a8837cc28b0b6df79a01a7eb0a1da83a96",
   "owners_hash": "0a14908d45e50bec67951f55e1f5c8d4ac2242c4e7be663f8cf00e6042fed9cf",
-  "previous_baseline_hash": "360f09517ac7d479f2ae472ecaa7dadd100b84395d44a6381ae2bcc5eed8199b",
+  "previous_baseline_hash": "41553f9b724219c23e08794deb59de13a09256031b80ff322bcf1dc7374b49e9",
   "quality_summary_before": {
-    "source_files": 4279,
-    "overbudget_files": 1033,
-    "complexity_findings": 3221
-  },
-  "quality_summary_after": {
     "source_files": 4283,
     "overbudget_files": 1033,
     "complexity_findings": 3222
   },
-  "manual_override_decision": "D002",
+  "quality_summary_after": {
+    "source_files": 4289,
+    "overbudget_files": 1033,
+    "complexity_findings": 3228
+  },
+  "manual_override_decision": "D003",
   "mode": "ratchet",
   "budgets": {
     "max_source_file_lines": 500,
@@ -17123,11 +17123,15 @@
       "overbudget": false
     },
     "src/phantom_veil/__init__.py": {
-      "lines": 24,
+      "lines": 62,
       "overbudget": false
     },
     "src/phantom_veil/benchmark.py": {
-      "lines": 121,
+      "lines": 161,
+      "overbudget": false
+    },
+    "src/phantom_veil/dynamics.py": {
+      "lines": 184,
       "overbudget": false
     },
     "src/phantom_veil/io.py": {
@@ -17136,6 +17140,14 @@
     },
     "src/phantom_veil/models.py": {
       "lines": 20,
+      "overbudget": false
+    },
+    "src/phantom_veil/reporting.py": {
+      "lines": 356,
+      "overbudget": false
+    },
+    "src/phantom_veil/scenarios.py": {
+      "lines": 220,
       "overbudget": false
     },
     "src/phantom_veil/solver.py": {
@@ -17147,7 +17159,19 @@
       "overbudget": false
     },
     "tests/test_benchmark.py": {
-      "lines": 52,
+      "lines": 64,
+      "overbudget": false
+    },
+    "tests/test_dynamics.py": {
+      "lines": 125,
+      "overbudget": false
+    },
+    "tests/test_reporting.py": {
+      "lines": 310,
+      "overbudget": false
+    },
+    "tests/test_scenarios.py": {
+      "lines": 146,
       "overbudget": false
     },
     "tests/test_schemas.py": {
@@ -42826,13 +42850,19 @@
         "budget_category": "source"
       },
       "src/phantom_veil/__init__.py": {
-        "lines": 24,
+        "lines": 62,
         "overbudget": false,
         "max_lines": 400,
         "budget_category": "source"
       },
       "src/phantom_veil/benchmark.py": {
-        "lines": 121,
+        "lines": 161,
+        "overbudget": false,
+        "max_lines": 400,
+        "budget_category": "source"
+      },
+      "src/phantom_veil/dynamics.py": {
+        "lines": 184,
         "overbudget": false,
         "max_lines": 400,
         "budget_category": "source"
@@ -42845,6 +42875,18 @@
       },
       "src/phantom_veil/models.py": {
         "lines": 20,
+        "overbudget": false,
+        "max_lines": 400,
+        "budget_category": "source"
+      },
+      "src/phantom_veil/reporting.py": {
+        "lines": 356,
+        "overbudget": false,
+        "max_lines": 400,
+        "budget_category": "source"
+      },
+      "src/phantom_veil/scenarios.py": {
+        "lines": 220,
         "overbudget": false,
         "max_lines": 400,
         "budget_category": "source"
@@ -42862,7 +42904,25 @@
         "budget_category": "source"
       },
       "tests/test_benchmark.py": {
-        "lines": 52,
+        "lines": 64,
+        "overbudget": false,
+        "max_lines": 300,
+        "budget_category": "test"
+      },
+      "tests/test_dynamics.py": {
+        "lines": 125,
+        "overbudget": false,
+        "max_lines": 300,
+        "budget_category": "test"
+      },
+      "tests/test_reporting.py": {
+        "lines": 310,
+        "overbudget": true,
+        "max_lines": 300,
+        "budget_category": "test"
+      },
+      "tests/test_scenarios.py": {
+        "lines": 146,
         "overbudget": false,
         "max_lines": 300,
         "budget_category": "test"
@@ -42948,5 +43008,5 @@
       }
     }
   },
-  "new_baseline_hash": "41553f9b724219c23e08794deb59de13a09256031b80ff322bcf1dc7374b49e9"
+  "new_baseline_hash": "ea59fcfd271946c59bd6313a03fb3e5614d7ad6370186aa55c12474b40fa334e"
 }
