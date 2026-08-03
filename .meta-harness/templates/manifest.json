@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0.0",
-  "generated_at": "2026-06-10T11:22:41.144Z",
-  "template_count": 23,
+  "generated_at": "2026-06-21T12:10:35.058Z",
+  "template_count": 29,
   "hash_algorithm": "sha256",
   "line_ending_normalization": "LF",
   "templates": [
@@ -9,6 +9,16 @@
       "source_path": "templates/contracts/clean-code-contract.json",
       "installed_path": ".meta-harness/templates/contracts/clean-code-contract.json",
       "content_hash": "51fba75ed9c73328299e1beca30432ed94e142c1aae50d6862e33861b7ce2b52"
+    },
+    {
+      "source_path": "templates/contracts/context-adoption-contract.md",
+      "installed_path": ".meta-harness/templates/contracts/context-adoption-contract.md",
+      "content_hash": "30349e7e38dd036ca5ed82a83c45d388c3ade04d7e4d14e208efec24552767c0"
+    },
+    {
+      "source_path": "templates/contracts/context-gate-schema.json",
+      "installed_path": ".meta-harness/templates/contracts/context-gate-schema.json",
+      "content_hash": "2fc46a40692fbad5c1b39feef5630b4e28bf4dd1693b51a7b0e6fb2fc1f4a886"
     },
     {
       "source_path": "templates/contracts/decision-inbox-contract.md",
@@ -33,12 +43,17 @@
     {
       "source_path": "templates/contracts/expert-reconciliation-matrix.md",
       "installed_path": ".meta-harness/templates/contracts/expert-reconciliation-matrix.md",
-      "content_hash": "711c6baa8f3567684f61899b83906c034e80b55f85f21635e006e7a90d7d16b7"
+      "content_hash": "d7f3b3b976c4f6d090495f98e2eb666b7b1f739659f8039dc0047e6096fb4426"
     },
     {
       "source_path": "templates/contracts/pm-brief-scan-contract.md",
       "installed_path": ".meta-harness/templates/contracts/pm-brief-scan-contract.md",
       "content_hash": "2878dd895bffee1f9d2afcaecc82d23114ad851c920ad6546ab57b53f34acd00"
+    },
+    {
+      "source_path": "templates/contracts/ship-fast-decision-gate.md",
+      "installed_path": ".meta-harness/templates/contracts/ship-fast-decision-gate.md",
+      "content_hash": "286b4273ceb1df93c1af35c4738ae070c53a1aff974ed274575633abee615afb"
     },
     {
       "source_path": "templates/contracts/skill-distillation-contract.md",
@@ -68,7 +83,7 @@
     {
       "source_path": "templates/contracts/worker-done-contract.md",
       "installed_path": ".meta-harness/templates/contracts/worker-done-contract.md",
-      "content_hash": "7889c632e457adee44292a8a9d0295ebb7dcb8437e8496f5978e901f91177089"
+      "content_hash": "cd5596592b8092b7bac219fa8112b72f8976399af448931614dbaccd5bf4f37a"
     },
     {
       "source_path": "templates/skills/boundary-gate.md",
@@ -76,9 +91,24 @@
       "content_hash": "178c63d2f4b0796ad72d766be3d7d6b711fc13b1b22403e0e400f79922b2f318"
     },
     {
+      "source_path": "templates/skills/build-vs-borrow-router.md",
+      "installed_path": ".meta-harness/templates/skills/build-vs-borrow-router.md",
+      "content_hash": "fe4516833c1bd15cd7fee523a4d3b215469682135069cc16f3422c6adf8ad3a8"
+    },
+    {
+      "source_path": "templates/skills/context-packet.md",
+      "installed_path": ".meta-harness/templates/skills/context-packet.md",
+      "content_hash": "38e62c7198f7743098a59306825074246f724cc14445877d78228d701e9776cd"
+    },
+    {
+      "source_path": "templates/skills/context-quality-gate.md",
+      "installed_path": ".meta-harness/templates/skills/context-quality-gate.md",
+      "content_hash": "9546dcba99a0eb7466b9dc3f8d125fa250fbc85c4df83272154eb709b1fa0f80"
+    },
+    {
       "source_path": "templates/skills/dirty-work-autopilot.md",
       "installed_path": ".meta-harness/templates/skills/dirty-work-autopilot.md",
-      "content_hash": "0de5974e2fdea06efa0de91fd85234fece8c94a3d2a25a1fe23521ed0a273c6a"
+      "content_hash": "0747a7c3ffbe803919eb211e2934e37ef086477f10362c46decb6a64f4316896"
     },
     {
       "source_path": "templates/skills/distilled-taste-capsule.md",
@@ -88,12 +118,12 @@
     {
       "source_path": "templates/skills/expert-context-packer.md",
       "installed_path": ".meta-harness/templates/skills/expert-context-packer.md",
-      "content_hash": "5b54a083e9609e2d932e2c3479718bb9d53b0202fe79e0134d8ef4353c3cf8eb"
+      "content_hash": "696c96a13ccb853341acda13634a6f8b98afe25960262674051eb1d70659c340"
     },
     {
       "source_path": "templates/skills/expert-front-card.md",
       "installed_path": ".meta-harness/templates/skills/expert-front-card.md",
-      "content_hash": "1cbe70c3a0bcf94c5105d13cf2440654d8fdc11ede72ce241d3dc1bd3ad1ee96"
+      "content_hash": "c0b3b11609df8f942db44ca59f1894014dc3c17d685a461f64b8d0f8c3efbc57"
     },
     {
       "source_path": "templates/skills/harness-feedback.md",
@@ -108,12 +138,12 @@
     {
       "source_path": "templates/skills/scope-selector.md",
       "installed_path": ".meta-harness/templates/skills/scope-selector.md",
-      "content_hash": "6e1961d856568db7d1064e65ebd64e2ca940e689625f728c62e3c2b1c72116b9"
+      "content_hash": "3a2e86c26488a1859d413707b0409ed5ccecc439c1f1efdb103e0fa31e17d9aa"
     },
     {
       "source_path": "templates/skills/ship-fast-decision-router.md",
       "installed_path": ".meta-harness/templates/skills/ship-fast-decision-router.md",
-      "content_hash": "66f19e20bf00fef7c3dad594af43c1bab650376292a2e214472d49d73a2cd079"
+      "content_hash": "f1869ebde3bce0a32383a4453d405323e8c96b6aa11d3e658b884763177afe55"
     },
     {
       "source_path": "templates/skills/subagent-workcell.md",
@@ -121,5 +151,5 @@
       "content_hash": "44debb09279b9da8ef7ed2c1697a9d966ce4d5d703b54008a0c0744b2978e4df"
     }
   ],
-  "manifest_hash": "11da8f41e71f08a35347194cd4520eb96ded655035ff12855460b0dcb35a5fe9"
+  "manifest_hash": "808e30e54e0afad51b6c4b6ac6c905afda18ef8b4b74e83543f4f8cf1cd7522b"
 }

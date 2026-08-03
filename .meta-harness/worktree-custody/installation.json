@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "MH_WORKTREE_001",
+  "contract_version": "1.0.0",
+  "meta_harness_version": "0.3.1",
+  "meta_harness_commit": "3e10236ce56844425857037b06f4f76ff7f36ec2",
+  "meta_harness_source": "E:\\Code\\meta-harness-worktree-custody-bank",
+  "policy_hash": "0f0c91b27f9567f41adcc8675e67cf4aa7c0b2403162d50988e5f4397279c835",
+  "installed_at": "2026-07-30T13:04:24.797Z",
+  "approved_owner_root": "E:\\Code\\Phantom Veil"
+}
